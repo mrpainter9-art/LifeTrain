@@ -1,0 +1,655 @@
+<title>창가석 기차 여행</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Silkscreen&display=swap">
+<style>
+/* layout: one wide carriage window is the whole stage; a route strip like the map above a train door, then a row of small actions */
+:root{
+  --ink:#10131b; --panel:#191e2a; --line:#2b3243; --text:#ebe4d3; --muted:#9aa1ae;
+  --lamp:#f2b65a; --rail:#cf4a3c; --lake:#55b8b0; --paper:#f1e8d2; --paperInk:#3b3328;
+  --f-body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-pix:"Silkscreen",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--ink);color:var(--text)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1280px;margin:0 auto;padding-block:18px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+h1{margin:0;font-size:26px;font-weight:400;letter-spacing:.02em;text-wrap:balance}
+h1 small{font-family:var(--f-pix);font-size:12px;color:var(--lamp);margin-left:8px;letter-spacing:.06em}
+.route{margin:0;color:var(--muted);font-size:13px;min-width:0}
+#stage{position:relative;width:100%;aspect-ratio:560/240;max-width:100%;background:#000;border-radius:6px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+#cv{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+#cap{position:absolute;left:50%;bottom:13%;transform:translateX(-50%);width:min(70%,640px);text-align:center;pointer-events:none}
+#cap .line{display:inline-block;background:rgba(14,16,24,.72);padding:6px 14px;border-radius:3px;font-size:clamp(12px,1.7vw,17px);line-height:1.5;text-shadow:0 1px 0 #000}
+#cap .who{display:block;font-size:.75em;color:var(--lamp)}
+#cap .nar{color:#d8d2c4;font-style:italic}
+#act{position:absolute;right:2%;bottom:13%;display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:34%}
+#act p{margin:0;background:rgba(14,16,24,.8);padding:5px 10px;border-radius:3px;font-size:clamp(11px,1.4vw,14px);text-align:right}
+#ann{position:absolute;left:50%;top:6%;transform:translateX(-50%);background:rgba(16,19,27,.86);border:1px solid var(--line);padding:6px 14px;border-radius:3px;font-size:clamp(11px,1.5vw,14px);text-align:center;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+#ann .de{font-family:var(--f-pix);color:var(--lamp);font-size:.85em;letter-spacing:.04em;display:block}
+#toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:rgba(16,19,27,.9);padding:6px 12px;border-radius:3px;font-size:clamp(11px,1.4vw,14px);max-width:80%;text-align:center}
+#cardsHere{position:absolute;right:2%;top:6%;background:var(--paper);color:var(--paperInk);border:0;border-radius:3px;font:inherit;font-size:clamp(11px,1.4vw,14px);padding:6px 10px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.35)}
+#cardsHere.warm{box-shadow:0 0 14px 2px rgba(242,182,90,.75)}
+#stopInfo{position:absolute;left:12%;top:6%;background:rgba(207,74,60,.92);padding:5px 10px;border-radius:3px;font-size:clamp(11px,1.4vw,14px)}
+.overlay{position:absolute;inset:0;background:rgba(10,12,18,.72);display:flex;align-items:center;justify-content:center;padding:4%;text-align:center}
+.overlay .box{max-width:560px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.overlay h2{margin:0;font-weight:400;font-size:clamp(17px,2.6vw,26px);text-wrap:balance}
+.overlay p{margin:0;color:#c9cbd2;font-size:clamp(12px,1.5vw,15px)}
+.ticketcard{font-family:var(--f-pix);font-size:clamp(10px,1.3vw,13px);letter-spacing:.05em;background:var(--paper);color:var(--paperInk);padding:6px 12px;border-radius:2px;border-left:6px solid var(--rail)}
+#info{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+#info b{color:var(--text);font-weight:400}
+#routebar{position:relative;height:46px;margin:0 6px}
+#rbLine{position:absolute;left:0;right:0;top:22px;height:2px;background:var(--line)}
+#rbDone{position:absolute;left:0;top:22px;height:2px;background:var(--lamp);width:0}
+.st{position:absolute;top:18px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--ink);border:2px solid var(--muted)}
+.st.past{border-color:var(--lamp);background:var(--lamp)}
+.stl{position:absolute;font-family:var(--f-pix);font-size:9px;color:var(--muted);transform:translateX(-50%);white-space:nowrap;letter-spacing:.02em}
+.stl.up{top:0}.stl.dn{top:32px}
+.pcm{position:absolute;top:13px;width:3px;height:6px;margin-left:-1px;background:var(--paper);opacity:.8}
+#train{position:absolute;top:16px;width:18px;height:12px;margin-left:-9px;background:var(--rail);border-radius:3px;box-shadow:0 0 0 2px var(--ink)}
+#train::after{content:"";position:absolute;left:3px;top:3px;width:12px;height:3px;background:var(--paper);opacity:.85}
+#ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ff{display:inline-flex;margin-left:auto;align-items:center}
+.ff span{color:var(--muted);font-size:13px;margin-right:8px}
+.ff button.b{border-radius:0;margin-left:-1px}
+.ff button.b:first-of-type{border-radius:4px 0 0 4px}.ff button.b:last-of-type{border-radius:0 4px 4px 0}
+button.b{font:inherit;font-size:14px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:8px 14px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+button.b:hover:not(:disabled){border-color:var(--lamp)}
+button.b:disabled{opacity:.4;cursor:default}
+button.b b{font-family:var(--f-pix);font-weight:400;color:var(--lamp);font-size:12px}
+button.b.main,button.b.on{background:var(--lamp);color:#2a1d08;border-color:var(--lamp)}
+button.b.small{font-size:13px;padding:5px 10px}
+button.b.pix{font-family:var(--f-pix);font-size:12px;letter-spacing:.04em}
+button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--lamp);outline-offset:2px}
+.hint{margin:0;color:var(--muted);font-size:13px}
+.modal{position:fixed;inset:0;background:rgba(6,8,12,.72);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding-block:max(20px,env(safe-area-inset-top,0px)) 20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:5}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:6px;max-width:840px;width:100%;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.sheet h3{margin:0;font-weight:400;font-size:20px}
+.sheet .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet img.pc{width:100%;height:auto;border-radius:2px;display:block}
+.sheet textarea{width:100%;box-sizing:border-box;min-height:70px;font:inherit;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row a.b{font-size:14px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:8px 14px;text-decoration:none}
+.note{color:var(--muted);font-size:13px;margin:0}
+.cardItem{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:12px}
+.cardItem .meta{color:var(--muted);font-size:13px}
+.log{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.log li{border-left:3px solid var(--lamp);padding:2px 0 2px 10px}
+.log li.miss{border-color:var(--line);color:var(--muted)}
+.log li small{display:block;color:var(--muted);font-size:12px}
+@media (max-width:640px){.stl{font-size:7px}h1{font-size:22px}.ff{margin-left:0}#act{max-width:48%}#cap{width:86%}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>창가석<small>LUZERN → INTERLAKEN OST</small></h1>
+    <p class="route">루체른–인터라켄 익스프레스 노선을 바탕으로 · 게임 속 시간은 현실과 똑같이 흘러요</p>
+  </header>
+
+  <div id="stage">
+    <canvas id="cv" width="560" height="240" aria-label="기차 창밖 풍경"></canvas>
+    <div id="cap"></div>
+    <div id="act" hidden><p id="actText"></p><button class="b small main" id="actBtn"></button></div>
+    <div id="ann" hidden></div>
+    <div id="stopInfo" hidden></div>
+    <button id="cardsHere" hidden></button>
+    <div id="toast" hidden></div>
+    <div id="intro" class="overlay">
+      <div class="box">
+        <div class="ticketcard">LUZERN → INTERLAKEN OST · 2. KLASSE · FENSTERPLATZ</div>
+        <h2 id="introTitle">인터라켄 오스트행 열차가 곧 출발해요</h2>
+        <p id="introText">실제 시간으로 약 2시간 걸리는 여정이에요. 하늘은 스위스 현지 시각과 해의 위치를 따라가고, 날씨는 천천히 바뀌어요.</p>
+        <div class="row" style="justify-content:center">
+          <button class="b main" id="bBoard">탑승하기</button>
+          <button class="b" id="bRestart" hidden>처음부터 다시 타기</button>
+        </div>
+      </div>
+    </div>
+    <div id="arrive" class="overlay" hidden>
+      <div class="box">
+        <div class="ticketcard">INTERLAKEN OST · ENDSTATION</div>
+        <h2>인터라켄 오스트에 도착했어요</h2>
+        <p id="arriveText"></p>
+        <div class="row" style="justify-content:center">
+          <button class="b" id="bBook2">여행 수첩 보기</button>
+          <button class="b main" id="bAgain">다시 여행하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="info"></div>
+  <div id="routebar"><div id="rbLine"></div><div id="rbDone"></div><div id="train"></div></div>
+
+  <div id="ctl">
+    <button class="b" id="bCard">엽서 쓰기</button>
+    <button class="b" id="bTicket">정차 티켓 <b id="tkN">1</b></button>
+    <button class="b" id="bTalk">말 걸기</button>
+    <button class="b" id="bTea">차 나눠 주기 <b id="teaN">3</b></button>
+    <button class="b" id="bBook">여행 수첩</button>
+    <button class="b" id="bSnd">소리 켜기</button>
+    <div class="ff" role="group" aria-label="빨리 감기"><span>빨리 감기 (프로토용)</span>
+      <button class="b pix on" data-sp="1">x1</button><button class="b pix" data-sp="8">x8</button><button class="b pix" data-sp="40">x40</button>
+    </div>
+  </div>
+  <p class="hint">승객의 이야기는 자막으로 들려요. 말을 걸거나 차를 나누고, 가끔 화면 오른쪽에 뜨는 작은 순간에 반응해 보세요. 빨리 감기를 하면 하늘의 시간도 함께 빨라져요.</p>
+</div>
+
+<div id="modal" class="modal" hidden><div class="sheet" id="sheet"></div></div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const W=560,H=240,CX=330;
+const cv=$('cv'),ctx=cv.getContext('2d');
+const mk=(w=W,h=H)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.imageSmoothingEnabled=false;return [c,g]};
+const [outC,oc]=mk(),[landC,lc]=mk(),[reflC,rc]=mk(),[frC,fc]=mk(),[frT,ftc]=mk(),[maskC,mkc]=mk(),[fxC,fxc]=mk();
+ctx.imageSmoothingEnabled=false;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v, lerp=(a,b,t)=>a+(b-a)*t, sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+function hash(n){n=Math.imul(n|0,374761393)+668265263|0;n=Math.imul(n^(n>>>13),1274126177);n^=n>>>16;return (n>>>0)/4294967296}
+function vnoise(x,seed){const i=Math.floor(x),f=x-i,u=f*f*(3-2*f);return hash(i*31+seed*7919)*(1-u)+hash((i+1)*31+seed*7919)*u}
+const fbm=(x,s)=>vnoise(x,s)*.55+vnoise(x*2.1+17,s+1)*.27+vnoise(x*4.3+51,s+2)*.12+vnoise(x*9.1+3,s+3)*.06;
+const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const mixc=(a,b,t)=>{const A=hex(a),B=hex(b);return '#'+A.map((v,i)=>Math.round(lerp(v,B[i],clamp(t,0,1))).toString(16).padStart(2,'0')).join('')};
+const R=(g,c,x,y,w,h)=>{g.fillStyle=c;g.fillRect(x|0,y|0,w|0,h|0)};
+
+/* ---------- the real line ---------- */
+const ST=[
+ {n:'Luzern',ko:'루체른',sh:'Luzern',s:0,alt:436,lat:47.050,lon:8.310},
+ {n:'Hergiswil',ko:'헤르기스빌',sh:'Hergiswil',s:8000,alt:449,lat:46.984,lon:8.309},
+ {n:'Alpnachstad',ko:'알프나흐슈타트',sh:'Alpnach',s:14000,alt:436,lat:46.955,lon:8.277},
+ {n:'Sarnen',ko:'자르넨',sh:'Sarnen',s:21500,alt:473,lat:46.896,lon:8.246},
+ {n:'Giswil',ko:'기스빌',sh:'Giswil',s:29800,alt:485,lat:46.833,lon:8.186},
+ {n:'Lungern',ko:'룽게른',sh:'Lungern',s:37000,alt:752,lat:46.786,lon:8.160},
+ {n:'Brünig-Hasliberg',ko:'브뤼니히하슬리베르크',sh:'Brünig',s:44200,alt:1002,lat:46.757,lon:8.138},
+ {n:'Meiringen',ko:'마이링겐',sh:'Meiringen',s:53000,alt:595,lat:46.727,lon:8.187},
+ {n:'Brienz',ko:'브리엔츠',sh:'Brienz',s:64907,alt:566,lat:46.7545,lon:8.0366},
+ {n:'Interlaken Ost',ko:'인터라켄 오스트',sh:'Interlaken',s:79649,alt:567,lat:46.690,lon:7.869},
+];
+const END=ST[ST.length-1].s;
+const LEGV=[55,55,60,60,35,25,25,60,65]; // km/h, slow legs are the rack section over the Brünig
+const PH=[];let TOTAL=0;
+PH.push({t0:0,dur:90,move:false,s:0,st:0});TOTAL=90;
+for(let i=0;i<ST.length-1;i++){const a=ST[i].s,b=ST[i+1].s,dur=(b-a)/(LEGV[i]/3.6)+40;PH.push({t0:TOTAL,dur,move:true,a,b,leg:i});TOTAL+=dur;
+  if(i+1<ST.length-1){PH.push({t0:TOTAL,dur:60,move:false,s:b,st:i+1});TOTAL+=60}}
+function phaseAt(g){for(const p of PH)if(g<p.t0+p.dur)return p;return null}
+function sAt(g){if(g<=0)return 0;const p=phaseAt(g);if(!p)return END;if(!p.move)return p.s;
+  const u=g-p.t0,D=p.b-p.a,ta=Math.min(45,p.dur/3),vm=D/(p.dur-ta),acc=vm/ta;
+  if(u<ta)return p.a+.5*acc*u*u; if(u<p.dur-ta)return p.a+.5*vm*ta+vm*(u-ta); const r=p.dur-u;return p.b-.5*acc*r*r}
+const SEGS=[[0,2500,'city'],[2500,6000,'lake','Vierwaldstättersee','피어발트슈테터 호수','#3f86c8'],[6000,7000,'village'],[7000,8600,'lake','Vierwaldstättersee','피어발트슈테터 호수','#3f86c8'],
+ [8600,13800,'lake','Alpnachersee','알프나허 호수','#4590c8'],[13800,21000,'meadow'],[21000,22300,'village'],[22300,29000,'lake','Sarnersee','자르너 호수','#4a92c0'],
+ [29000,31000,'village'],[31000,33500,'forest'],[33500,37200,'lake','Lungerersee','룽게르너 호수','#3fb4b4'],[37200,44500,'pasture'],[44500,52500,'forest'],
+ [52500,54000,'village'],[54000,63800,'meadow'],[63800,79100,'lake','Brienzersee','브리엔츠 호수','#4cbfb6'],[79100,1e6,'city']];
+const TUN=[[5600,6100],[38600,39900],[46000,46600]];
+const CURVES=[[16500,18200],[31600,33200],[40400,43300],[47200,50600],[55000,57000]];
+function seg(s){for(const q of SEGS)if(s<q[1])return q;return SEGS[SEGS.length-1]}
+const inTun=s=>{for(const t of TUN)if(s>=t[0]&&s<=t[1])return true;return false};
+const MT=[[-9e4,.45],[0,.45],[6000,.65],[10000,.95],[14000,.75],[22000,.65],[30000,.75],[37000,.88],[44000,1],[53000,.92],[60000,1],[1e6,1]];
+function mtn(s){for(let i=1;i<MT.length;i++)if(s<MT[i][0]){const a=MT[i-1],b=MT[i];return lerp(a[1],b[1],(s-a[0])/(b[0]-a[0]))}return 1}
+const PEAKS=[{s:7000,n:'STANSERHORN',alt:1898,h:70,w:30},{s:10000,n:'PILATUS',alt:2128,h:96,w:30},{s:40000,n:'WILERHORN',alt:2005,h:84,w:34},{s:61500,n:'BRIENZER ROTHORN',alt:2350,h:98,w:36},
+ {s:72500,n:'EIGER',alt:3967,h:118,w:26},{s:75500,n:'MÖNCH',alt:4107,h:114,w:24},{s:78500,n:'JUNGFRAU',alt:4158,h:122,w:30}];
+
+/* ---------- real terrain: Meiringen to Interlaken Ost, rendered from elevation data at the train's eye (far / mid / near strips) ---------- */
+const REAL={ok:false,L:{"far": [0.01625, 30230.77, 1074], "mid": [0.065, 47307.69, 2373], "near": [0.26, 51576.92, 7569]},peaks:[["FAULHORN", 2681, 67860, 7870, 53.0], ["SCHWARZHORN", 2928, 62040, 8960, 54.7], ["AXALPHORN", 2321, 63760, 4899, 23.9], ["EIGER", 3967, 70600, 17876, 78.6], ["MÖNCH", 4107, 71600, 19559, 81.7], ["JUNGFRAU", 4158, 75040, 19834, 81.6], ["SCHYNIGE PLATTE", 2076, 76920, 5834, 56.2], ["WETTERHORN", 3692, 60680, 12545, 59.4], ["SCHRECKHORN", 4078, 61680, 18102, 77.4]],trk:[[53000, 46.7275, 8.187], [53500, 46.72922, 8.18094], [54000, 46.73094, 8.17488], [54500, 46.73266, 8.16882], [55000, 46.73435, 8.16275], [55500, 46.736, 8.15664], [56000, 46.73759, 8.15051], [56500, 46.73913, 8.14435], [57000, 46.74062, 8.13816], [57500, 46.74206, 8.13195], [58000, 46.74346, 8.12572], [58500, 46.74482, 8.11948], [59000, 46.74614, 8.11321], [59500, 46.74736, 8.1069], [60000, 46.74831, 8.1005], [60500, 46.74912, 8.09405], [61000, 46.74992, 8.0876], [61500, 46.7507, 8.08115], [62000, 46.75146, 8.07469], [62500, 46.75216, 8.06822], [63000, 46.7528, 8.06173], [63500, 46.75335, 8.05523], [64000, 46.75378, 8.04871], [64500, 46.75386, 8.04216], [65000, 46.75342, 8.03564], [65500, 46.75251, 8.02923], [66000, 46.75117, 8.02297], [66500, 46.74961, 8.01682], [67000, 46.74796, 8.01072], [67500, 46.74622, 8.00468], [68000, 46.74438, 7.99869], [68500, 46.74255, 7.9927], [69000, 46.74094, 7.98658], [69500, 46.73957, 7.98034], [70000, 46.73845, 7.97399], [70500, 46.73736, 7.96764], [71000, 46.7357, 7.96155], [71500, 46.73356, 7.95578], [72000, 46.73104, 7.95033], [72500, 46.72825, 7.94518], [73000, 46.72535, 7.94015], [73500, 46.72249, 7.93508], [74000, 46.71965, 7.92998], [74500, 46.71683, 7.92485], [75000, 46.71405, 7.91969], [75500, 46.71128, 7.91451], [76000, 46.70855, 7.90929], [76500, 46.70586, 7.90402], [77000, 46.70323, 7.89869], [77500, 46.70067, 7.89329], [78000, 46.6982, 7.8878], [78500, 46.69582, 7.88222], [79000, 46.69351, 7.8766], [79500, 46.69119, 7.87097]],img:{},top:{},wtop:{}};
+(()=>{const names=['far','mid','near','mid_wa','near_wa'];let n=0;
+  for(const k of names){const im=new Image();im.onload=()=>{REAL.img[k]=im;if(++n===names.length)realReady()};im.onerror=()=>console.warn('real terrain missing',k);im.src=k+'.png';}
+  function realReady(){
+    // per column: first opaque row of each strip, and the first water row (the far shore line where the lake starts)
+    const scan=(im,arr)=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const g=c.getContext('2d');g.drawImage(im,0,0);const d=g.getImageData(0,0,im.width,im.height).data,o=new Uint8Array(im.width).fill(255);
+      for(let x=0;x<im.width;x++)for(let y=0;y<im.height;y++)if(d[(y*im.width+x)*4+3]>0){o[x]=y;break}return o};
+    REAL.top.mid=scan(REAL.img.mid);REAL.top.near=scan(REAL.img.near);REAL.wtop.mid=scan(REAL.img.mid_wa);REAL.wtop.near=scan(REAL.img.near_wa);REAL.ok=true}
+})();
+const realX=(k,s)=>Math.round((s-REAL.L[k][1])*REAL.L[k][0]-CX);
+function drawStrip(g,im,sx){let dx=0;if(sx<0){dx=-sx;sx=0}const w=Math.min(W-dx,im.width-sx);if(w>0)g.drawImage(im,sx,0,w,H,dx,0,w,H)}
+const realMix=s=>REAL.ok?sstep(52400,53000,s):0;
+function geo(s){if(REAL.trk&&s>=REAL.trk[0][0]&&s<=REAL.trk[REAL.trk.length-1][0]){const T=REAL.trk,i=Math.min(Math.floor((s-T[0][0])/500),T.length-2),t=(s-T[i][0])/500;let k=1;while(k<ST.length-1&&ST[k].s<s)k++;const a=ST[k-1],b=ST[k];return {lat:lerp(T[i][1],T[i+1][1],t),lon:lerp(T[i][2],T[i+1][2],t),alt:Math.round(lerp(a.alt,b.alt,clamp((s-a.s)/(b.s-a.s),0,1)))}}
+  for(let i=1;i<ST.length;i++)if(s<=ST[i].s){const a=ST[i-1],b=ST[i],t=(s-a.s)/(b.s-a.s);return {lat:lerp(a.lat,b.lat,t),lon:lerp(a.lon,b.lon,t),alt:Math.round(lerp(a.alt,b.alt,t))}}const z=ST[ST.length-1];return {lat:z.lat,lon:z.lon,alt:z.alt}}
+function placeName(s){const q=seg(s);if(q[2]==='lake')return {de:q[3],ko:q[4]};let best=null;for(const x of ST)if(Math.abs(x.s-s)<2200&&(!best||Math.abs(x.s-s)<Math.abs(best.s-s)))best=x;
+  if(best)return {de:best.n,ko:best.ko+' 근처'};let i=1;while(i<ST.length&&ST[i].s<s)i++;return {de:ST[i-1].n+'–'+ST[i].n,ko:ST[i-1].ko+'–'+ST[i].ko+' 사이'}}
+
+/* ---------- sun and local time ---------- */
+const RAD=Math.PI/180;
+function sun(ms,lat,lon){const d=ms/864e5-10957.5,g=(357.529+.98560028*d)*RAD,q=280.459+.98564736*d,L=(q+1.915*Math.sin(g)+.02*Math.sin(2*g))*RAD,e=(23.439-3.6e-7*d)*RAD;
+  const ra=Math.atan2(Math.cos(e)*Math.sin(L),Math.cos(L)),dec=Math.asin(Math.sin(e)*Math.sin(L)),gmst=((18.697374558+24.06570982441908*d)%24+24)%24,Hh=(gmst*15+lon)*RAD-ra,la=lat*RAD;
+  const el=Math.asin(Math.sin(la)*Math.sin(dec)+Math.cos(la)*Math.cos(dec)*Math.cos(Hh)),az=Math.atan2(-Math.sin(Hh),Math.tan(dec)*Math.cos(la)-Math.sin(la)*Math.cos(Hh));
+  return {el:el/RAD,az:((az/RAD)+360)%360}}
+const fmtT=new Intl.DateTimeFormat('ko-KR',{timeZone:'Europe/Zurich',hour:'2-digit',minute:'2-digit',hour12:false});
+const fmtD=new Intl.DateTimeFormat('ko-KR',{timeZone:'Europe/Zurich',year:'numeric',month:'long',day:'numeric'});
+const fmtH=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Zurich',hour:'numeric',hour12:false});
+const fmtM=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Zurich',month:'numeric'});
+const zHour=ms=>parseInt(fmtH.format(ms))%24;
+
+/* ---------- weather: slow 40-minute fronts, same for everyone at the same moment ---------- */
+const WS=[{n:'맑음',c:.08,r:0,f:0},{n:'구름 조금',c:.4,r:0,f:0},{n:'흐림',c:.86,r:0,f:.12},{n:'비',c:.95,r:.85,f:.22},{n:'안개',c:.5,r:0,f:.8}];
+const BLK=40*60000;const wCache={};
+function wIdx(i){if(wCache[i]!=null)return wCache[i];const h=hash(i*13+7),hr=zHour(i*BLK);let k=h<.34?0:h<.58?1:h<.76?2:h<.92?3:4;if(k===4&&!(hr>=5&&hr<=11))k=2;return wCache[i]=k}
+function weather(ms){const i=Math.floor(ms/BLK),f=(ms%BLK)/BLK,A=WS[wIdx(i)],B=WS[wIdx(i+1)],k=sstep(.75,1,f);
+  const m=parseInt(fmtM.format(ms)),snow=m>=11||m<=3;
+  const w={c:lerp(A.c,B.c,k),r:lerp(A.r,B.r,k),f:lerp(A.f,B.f,k),snow};
+  w.name=(k<.5?A:B).n;if(snow&&w.name==='비')w.name='눈';
+  const prevRain=WS[wIdx(i-1)].r>0&&A.r===0;w.rainbow=prevRain&&f<.35&&!snow?1-f/.35:0;return w}
+
+/* ---------- state ---------- */
+const KEY='train-v2';
+const fresh=()=>({start:null,rBase:0,tBase:0,speed:1,ticketR:null,tea:3,flags:{},fired:{},log:[],lastWho:null});
+let st=fresh();try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.start)st=Object.assign(fresh(),j)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
+const rNow=()=>st.start?st.rBase+(Date.now()-st.tBase)/1000*st.speed:0;
+const clockMs=()=>st.start?st.start+rNow()*1000:Date.now();
+function setSpeed(x){if(st.start){st.rBase=rNow();st.tBase=Date.now()}st.speed=x;save();document.querySelectorAll('.ff button').forEach(b=>b.classList.toggle('on',+b.dataset.sp===x))}
+
+/* ---------- people (heard, not seen) ---------- */
+const PASS=[
+ {id:'margrit',name:'마르그리트',role:'맞은편 할머니',board:0,alight:37000,hello:'맞은편 자리에 뜨개질 바구니를 든 할머니가 앉아 있어요.',
+  idle:['뜨개질은 기차에서 해야 잘 돼요. 덜컹거리는 박자가 있거든요.','창가 자리는 양보 못 해요, 호호.','룽게른 호수는 손주 눈동자 색이랑 똑같아요.'],tea:'어머, 따뜻해라. 뜨개바늘 잡은 손이 다 풀리네요.'},
+ {id:'noah',name:'노아',role:'옆자리 청년',board:8000,alight:53000,hello:'헤르기스빌에서 큰 배낭을 멘 청년이 옆자리에 앉았어요.',
+  idle:['배낭이 너무 무거워요. 엄마가 초콜릿을 세 개나 넣었거든요.','저 산은 이름이 뭘까요? …외워야 하는데.','기차가 기울 때마다 심장이 같이 기울어요.'],tea:'고마워요… 차를 마시니까 좀 덜 떨리네요.'},
+ {id:'elif',name:'엘리프',role:'통로 건너편 여행자',board:21500,alight:END+1,hello:'자르넨에서 오래된 필름 카메라를 든 여행자가 통로 건너편에 앉았어요.',
+  idle:['이 카메라는 아버지 거예요. 셔터 소리가 좀 커요.','창밖이 좋아서 자꾸 렌즈 뚜껑을 열게 돼요.','필름이 열두 장 남았어요. 아껴 찍어야 해요.'],tea:'향이 좋네요. 아버지도 기차에서는 꼭 차를 드셨대요.'},
+];
+const BEATS=[
+ {id:'m0',who:'margrit',s:700,t:c=>'손주가 룽게른에 살아요. 올겨울엔 꼭 제가 뜬 목도리를 둘러 주고 싶어서요.'},
+ {id:'m1',who:'margrit',s:9300,t:c=>c.w.c>.75?'오늘은 필라투스가 구름 속에 숨었네요. 우리 영감은 저 꼭대기까지 걸어서 올라갔었어요.':'저기 뾰족한 산이 필라투스예요. 우리 영감은 저 꼭대기까지 걸어서 올라갔었어요.'},
+ {id:'m2',who:'margrit',s:25000,t:c=>c.w.r>.3?'비 오는 날 호수는 소리가 없어서 좋아요. 뜨개질하기 딱 좋은 날씨예요.':c.night?'밤 호수는 거울 같아요. 마을 불빛이 두 번씩 켜져 있잖아요.':'자르너 호수는 흐린 날 물빛이 더 깊어 보여요. 오늘은 어때 보여요?'},
+ {id:'m3',who:'margrit',s:35800,t:c=>c.f.yarn?'다 떴어요! 끝매듭만 지으면 돼요. 당신 덕분이에요. 즐거운 여행 해요.':'실이 조금 모자라네요… 그래도 괜찮아요. 손주 얼굴 보면서 마저 뜨면 되죠.'},
+ {id:'n0',who:'noah',s:10200,t:c=>'내일부터 산악 가이드 견습이에요. 사실… 높은 곳이 좀 무서워요.'},
+ {id:'n1',who:'noah',s:31500,t:c=>'저 능선 이름을 전부 외워야 한대요. 산은 이렇게 많은데 제 머리는 하나라서요.'},
+ {id:'n2',who:'noah',s:43600,t:c=>'곧 브뤼니히 고개, 해발 1002미터예요. 이 기차가 톱니바퀴로 여기까지 올라왔다는 거 알았어요?'},
+ {id:'n3',who:'noah',s:52000,t:c=>c.f.tea_noah?'따뜻한 차 덕분에 손 떨림이 멈췄어요. 내일은 제가 먼저 줄을 잡아 볼게요.':'…괜찮겠죠. 처음엔 다들 무서웠을 거예요.'},
+ {id:'e0',who:'elif',s:23400,t:c=>'아버지가 30년 전에 찍은 사진이 있어요. 같은 자리에서 같은 호수를 찍어 보려고요.'},
+ {id:'e1',who:'elif',s:36000,t:c=>'사진 속 호수는 이렇게 초록색이 아니었어요. 흑백 사진이었거든요.'},
+ {id:'e2',who:'elif',s:44700,t:c=>'고개를 넘으니 졸음이 와요… 브리엔츠 호수가 보이면 깨워 줄래요?'},
+ {id:'e3',who:'elif',s:79000,t:c=>c.f.wake?'덕분에 찍었어요. 아버지 사진 옆에 나란히 걸어 둘게요.':'어머, 벌써 인터라켄이네요… 다음엔 꼭 알람을 맞춰야겠어요.'},
+];
+const onboard=(p,s)=>s>=p.board&&s<p.alight;
+const asleep=s=>s>45200&&s<78800&&!st.flags.wake;
+
+/* ---------- the window: seat corner, frame, table (static, tinted each frame) ---------- */
+function rrL(g,x,y,w,h,r){for(let j=0;j<h;j++){let ins=0;const dy=j<r?r-j-.5:j>=h-r?j-(h-r)+.5:-1;if(dy>=0)ins=Math.round(r-Math.sqrt(Math.max(0,r*r-dy*dy)));g.fillRect(x+ins,y+j,w-ins,1)}}
+function buildFrame(){const g=fc;g.clearRect(0,0,W,H);
+  R(g,'#c8b48c',0,0,W,H);for(let y=0;y<H;y+=6)R(g,'#bea982',0,y,46,1);
+  R(g,'#3a3e48',40,0,W,14);R(g,'#4c515c',40,12,W,2);
+  g.fillStyle='#3a3e48';rrL(g,40,0,W-40,214,22);g.fillStyle='#5e6470';rrL(g,46,10,W-46,198,18);g.fillStyle='#7b828e';rrL(g,49,12,W-49,193,16);
+  g.globalCompositeOperation='destination-out';g.fillStyle='#000';rrL(g,52,14,W-52,188,15);g.globalCompositeOperation='source-over';
+  R(g,'#4f5560',0,202,W,6);R(g,'#8a909a',0,202,W,1);R(g,'#3c414b',0,208,W,32);for(let x=0;x<W;x+=3)R(g,'#363a43',x,212,1,28);
+  R(g,'#6a5a3a',14,24,14,4);R(g,'#f2dcae',16,28,10,16);R(g,'#fff4d6',18,30,6,12);R(g,'#6a5a3a',14,44,14,3);
+  R(g,'#e9e2d0',0,60,30,46);R(g,'#7fa6c8',2,62,26,20);R(g,'#3a3e48',2,88,18,2);R(g,'#3a3e48',2,93,22,2);R(g,'#3a3e48',2,98,14,2);R(g,'#cf4a3c',20,96,6,6);R(g,'#ffffff',22,98,2,2);
+  R(g,'#20357c',0,118,40,122);for(let y=122;y<240;y+=4)for(let x=0;x<40;x+=4)if(hash(x*31+y*7)>.5)R(g,'#e2c25a',x+(y%8?0:2),y,1,1);
+  R(g,'#18296a',36,118,4,122);R(g,'#eef0f4',0,112,38,34);R(g,'#d8dbe2',0,142,38,4);
+  for(let k=0;k<5;k++)R(g,'#2a4a9a',6+k*3,132-k,3,1+k);for(let k=0;k<4;k++)R(g,'#2a4a9a',21+k*3,129+k,3,4-k);
+  R(g,'#d6d9de',0,218,170,22);R(g,'#eef0f2',0,218,170,2);R(g,'#a8acb4',0,226,170,1);
+  R(g,'#7a2e22',22,206,64,12);R(g,'#9a3e2c',22,206,64,3);R(g,'#e8dcc0',84,208,2,9);R(g,'#c9a24a',44,210,16,2);
+  R(g,'#9aa2b0',104,166,22,52);R(g,'#c4cbd6',106,166,6,52);R(g,'#5e6674',122,166,4,52);R(g,'#2a2f3a',102,160,26,10);R(g,'#474d5a',102,160,26,2);
+  R(g,'#2a4a9a',109,190,12,8);R(g,'#eef3fb',113,190,4,3);
+}
+buildFrame();
+
+/* ---------- sky ---------- */
+const SKY=[[-90,'#070a18','#10162c'],[-12,'#0b1130','#1b2346'],[-6,'#1d2655','#6b4f78'],[-2,'#2e3f7a','#d2786a'],[2,'#4566a6','#f0a46c'],[8,'#3f72c4','#e9d6b4'],[20,'#2f6fd0','#a9d3ee'],[90,'#2a68cc','#9ccbec']];
+function skyCols(el){for(let i=1;i<SKY.length;i++)if(el<SKY[i][0]){const a=SKY[i-1],b=SKY[i],t=(el-a[0])/(b[0]-a[0]);return [mixc(a[1],b[1],t),mixc(a[2],b[2],t)]}return [SKY[7][1],SKY[7][2]]}
+function tintFor(el,w){let c,a;
+  if(el<-10){c='#141a3c';a=.66}else if(el<-3){const t=(el+10)/7;c=mixc('#141a3c','#5a3e6e',t);a=lerp(.66,.42,t)}else if(el<5){const t=(el+3)/8;c=mixc('#5a3e6e','#ff9a5a',t);a=lerp(.42,.18,t)}else if(el<16){const t=(el-5)/11;c='#ffb070';a=lerp(.18,0,t)}else{c='#ffffff';a=0}
+  if(w.c>.5){const k=(w.c-.5)*2;c=mixc(c,'#6c7484',k*.6);a=Math.max(a,.22*k+w.r*.08)}return {c,a}}
+const CPAL=[['#ffffff','#e4e8f2','#b9c0d6'],['#ffe2c4','#f0b8a0','#9c7c9c'],['#5a6080','#40465f','#2c3048']];
+const CLOUDS=CPAL.map(pal=>{const arr=[];for(let k=0;k<6;k++){const c=document.createElement('canvas');c.width=130;c.height=56;const g=c.getContext('2d');const blobs=[];
+  for(let b=0;b<11;b++)blobs.push({x:14+hash(k*90+b)*100,y:22+hash(k*90+b+30)*14-(b<5?0:6),r:7+hash(k*90+b+60)*12});
+  for(const [pass,col,dy] of [[0,pal[2],3],[1,pal[1],1],[2,pal[0],0]])for(const bl of blobs){const r=bl.r-(pass===2?2:0);for(let y=-r;y<=r;y++){if(pass===2&&y>r*.25)continue;const hw=Math.round(Math.sqrt(r*r-y*y));g.fillStyle=col;g.fillRect(bl.x-hw|0,bl.y+y+dy|0,hw*2,1)}}
+  g.clearRect(0,48,130,8);arr.push(c)}return arr});
+
+
+/* the real near strip, then its lake: the shore above it mirrored into the water, glints, a few boats */
+function drawRealNear(s,ms,env,rk,sunX){
+  const {el,dark}=env,xm=realX('mid',s),xn=realX('near',s),TM=REAL.top.mid,TN=REAL.top.near,WM=REAL.wtop.mid,WN=REAL.wtop.near;
+  lc.globalAlpha=rk;drawStrip(lc,REAL.img.near,xn);lc.globalAlpha=1;
+  // water mask: the mid strip's lake where the near strip leaves it open, plus the near strip's own lake
+  mkc.clearRect(0,0,W,H);drawStrip(mkc,REAL.img.mid_wa,xm);mkc.globalCompositeOperation='destination-out';drawStrip(mkc,REAL.img.near,xn);mkc.globalCompositeOperation='source-over';drawStrip(mkc,REAL.img.near_wa,xn);
+  const yw=new Uint8Array(W).fill(255);
+  for(let c=0;c<W;c++){const m=WM[c+xm]??255,nt=TN[c+xn]??255;yw[c]=m<255&&nt>m?m:(WN[c+xn]??255)}
+  rc.clearRect(0,0,W,H);rc.drawImage(outC,0,0);rc.drawImage(landC,0,0);
+  fxc.clearRect(0,0,W,H);fxc.globalAlpha=.45;
+  for(let c=0;c<W;){const y=yw[c];let e=c+1;while(e<W&&yw[e]===y)e++;
+    if(y<H){const L=Math.min(y-14,H-y,100);if(L>0){fxc.save();fxc.setTransform(1,0,0,-1,0,2*y);fxc.drawImage(reflC,c,y-L,e-c,L,c,y-L,e-c,L);fxc.restore()}}c=e}
+  fxc.globalAlpha=1;
+  for(let c=0;c<W;c++)if(yw[c]<H)R(fxc,'rgba(235,245,252,.45)',c,yw[c],1,1);
+  for(let i=0;i<90;i++){const x=hash(i*7+Math.floor(ms/450))*W|0;if(yw[x]>=H)continue;const y=yw[x]+2+hash(i*7+1)*(H-yw[x])|0;R(fxc,'rgba(255,255,255,.35)',x,y,2+(i%4),1)}
+  if(el>-2&&!env.tun)for(let i=0;i<70;i++){const x=Math.round(sunX+(hash(i*3+Math.floor(ms/220))-.5)*(18+i*.5));if(x<0||x>=W||yw[x]>=H)continue;const y=yw[x]+3+Math.floor(hash(i*5)*Math.min(90,H-yw[x]));R(fxc,el<8?'rgba(255,214,150,.85)':'rgba(255,255,240,.85)',x,y,1+(i%3),1)}
+  fxc.globalCompositeOperation='destination-in';fxc.drawImage(maskC,0,0);fxc.globalCompositeOperation='source-over';
+  lc.globalAlpha=rk;lc.drawImage(fxC,0,0);lc.globalAlpha=1;
+  // sailboats on the far half of the lake, moving with the mid strip
+  const SP=150,o=xm;for(let t=Math.floor(o/SP)-1;t<=Math.floor((o+W)/SP)+1;t++){if(hash(t*13+5)>.4)continue;const x=Math.round(t*SP+hash(t)*60-o),mc=x+xm;if(x<4||x>W-8)continue;
+    const top=WM[mc]??255;if(top>=H)continue;const y=top+4+Math.round(hash(t*3)*8);if((TN[x+xn]??255)<=y+1)continue;
+    R(lc,'#ffffff',x+1,y-5,1,5);R(lc,'#ffffff',x+2,y-4,1,3);R(lc,'#eceae2',x,y-3,1,2);R(lc,'#7a5a42',x-1,y,5,1);R(lc,'rgba(255,255,255,.35)',x-1,y+2,5,1)}
+  // villages on the far shore light up after dusk
+  if(dark>.3)for(let c=0;c<W;c++){const mc=c+xm,top=WM[mc]??255;if(top<H&&top>4&&(TN[c+xn]??255)>top&&hash(mc*11+3)>.9)lit.push([c,top-2-Math.floor(hash(mc)*3),1,1])}
+}
+function realLabels(s){
+  const cand=[];for(const [n,alt,ps,d,y] of REAL.peaks){const k=d>7000?'far':'mid',x=Math.round((ps-s)*REAL.L[k][0]+CX);if(x<90||x>W-60)continue;
+    const occl=Math.min(k==='far'?(REAL.top.mid[x+realX('mid',s)]??255):255,REAL.top.near[x+realX('near',s)]??255);if(occl<y+2)continue;cand.push([Math.abs(x-CX),n,alt,x,y])}
+  cand.sort((a,b)=>a[0]-b[0]);lc.font='8px Silkscreen, monospace';lc.textAlign='center';const shown=[];
+  for(const [,n,alt,x,y] of cand){if(shown.length>=2)break;const t=`${n} ${alt}M`,hw=lc.measureText(t).width/2+6;if(shown.some(q=>Math.abs(q[0]-x)<q[1]+hw))continue;shown.push([x,hw]);
+    const ty=Math.max(22,Math.round(y-6));lc.fillStyle='rgba(20,28,48,.55)';lc.fillText(t,x+1,ty+1);lc.fillStyle='#ffffff';lc.fillText(t,x,ty);R(lc,'rgba(255,255,255,.7)',x,ty+2,1,Math.max(0,Math.round(y)-ty-3))}
+}
+
+/* ---------- outside world ---------- */
+let lit=[];
+let LK=0;const fy=c=>lerp(164+(c/W)*30,158+Math.pow(c/W,1.6)*95,LK); // the foreground meadow falls away to the right; along a lake it opens up the water
+function drawOutside(s,ms,env){
+  const {el,az,w,dark}=env;
+  {const q=seg(s);LK=q[2]==='lake'?Math.min(sstep(q[0],q[0]+500,s),1-sstep(q[1]-500,q[1],s)):0}
+  const [top,hor]=skyCols(el);const sg=oc.createLinearGradient(0,0,0,150);sg.addColorStop(0,top);sg.addColorStop(1,hor);oc.fillStyle=sg;oc.fillRect(0,0,W,H);
+  if(w.c>.45){oc.fillStyle=`rgba(${dark>.5?'40,44,60':'150,156,170'},${(w.c-.45)*1.1})`;oc.fillRect(0,0,W,H)}
+  if(dark>.3){for(let i=0;i<140;i++){const x=hash(i*3)*W|0,y=hash(i*3+1)*120|0;const tw=hash(i+Math.floor(ms/700))>.92?.3:1;oc.fillStyle=`rgba(255,250,235,${(dark-.3)*(1-w.c)*tw})`;oc.fillRect(x,y,1,1)}}
+  const sx=CX+(az-180)/70*W/2,sy=150-el*3;
+  if(el>-4&&sx>-30&&sx<W+30){const r=el<4?9:6;oc.fillStyle=el<6?'rgba(255,190,120,.22)':'rgba(255,250,220,.2)';oc.beginPath();oc.arc(sx,sy,r*3.2,0,7);oc.fill();
+    oc.fillStyle=el<6?'#ffcf8a':'#fffbe6';for(let y=-r;y<=r;y++){const hw=Math.round(Math.sqrt(r*r-y*y));oc.fillRect(sx-hw|0,sy+y|0,hw*2,1)}}
+  if(w.rainbow>0&&el>3&&el<42){const cx=W-sx,cols=['#e05050','#f0a040','#f0e060','#60c060','#5080e0','#8060c0'];oc.globalAlpha=.32*w.rainbow;
+    for(let k=0;k<6;k++){oc.strokeStyle=cols[k];oc.lineWidth=2;oc.beginPath();oc.arc(cx,160,130-k*2,Math.PI,0);oc.stroke()}oc.globalAlpha=1}
+  const pal=el<-6?2:el<6?1:0,nc=Math.round(4+w.c*10);
+  for(let k=0;k<nc;k++){const span=W+160,x=((hash(k*7)*span-s*.004-ms/1000*1.2*(.5+hash(k*9)))%span+span)%span-130,y=4+hash(k*11)*60;
+    oc.globalAlpha=.93;oc.drawImage(CLOUDS[pal][k%6],x|0,y|0);oc.globalAlpha=1}
+
+  lc.clearRect(0,0,W,H);lit=[];const month=parseInt(fmtM.format(ms)),snowLine=month>=11||month<=4?34:50;
+  // far snowy alps with named peaks
+  const rk=realMix(s);
+  if(rk<1){
+  const F1=.006,BASE1=136,h1=new Float32Array(W+2);
+  for(let c=0;c<=W+1;c++){const lx=s*F1+c-CX,sc=lx/F1;let h=(.3+.7*fbm(lx*.028,1))*mtn(sc)*80;
+    for(const p of PEAKS){const d=Math.abs(lx-p.s*F1);if(d<p.w)h=Math.max(h,p.h*(1-Math.pow(d/p.w,.9))+(vnoise(lx*.6,9)-.5)*5)}h1[c]=h}
+  for(let c=0;c<W;c++){const h=h1[c],y0=Math.round(BASE1-h),litS=h1[c+1]<h;
+    R(lc,litS?'#9aa2d0':'#737cb0',c,y0,1,BASE1+4-y0);const sd=h-snowLine;
+    if(sd>0){const dep=Math.round(sd*.7+vnoise(c*.5+s*F1,4)*7);R(lc,litS?'#f6f8fd':'#c6cde8',c,y0,1,dep);
+      for(let y=y0+dep;y<y0+dep+sd*.6;y+=2)if(hash(c*17+y*3+Math.floor(s*F1))>.72)R(lc,litS?'#e6ebf8':'#b4bcdc',c,y,1,2)}}
+  for(const p of PEAKS.map(p=>[p,Math.round(p.s*F1-(s*F1-CX))]).filter(a=>a[1]>90&&a[1]<W-60).sort((a,b)=>Math.abs(a[1]-CX)-Math.abs(b[1]-CX)).slice(0,2).map(a=>a[0])){const x=Math.round(p.s*F1-(s*F1-CX));if(w.c<.75&&!env.tun){lc.font='8px Silkscreen, monospace';lc.fillStyle='rgba(255,255,255,.8)';lc.textAlign='center';
+    const ty=Math.round(BASE1-h1[clamp(x,0,W)]-5);if(ty>18)lc.fillText(`${p.n} ${p.alt}M`,x,ty)}}
+  }
+  if(rk>0){lc.globalAlpha=rk;drawStrip(lc,REAL.img.far,realX('far',s));lc.globalAlpha=1}
+  {const hz=lc.createLinearGradient(0,70,0,150);const hc=hex(hor);hz.addColorStop(0,`rgba(${hc},0)`);hz.addColorStop(1,`rgba(${hc},.45)`);lc.fillStyle=hz;lc.fillRect(0,70,W,80)}
+  if(w.f>0){lc.fillStyle=`rgba(200,206,214,${w.f*.7})`;lc.fillRect(0,0,W,150)}
+  // nearer mountains with forested flanks
+  if(rk<1){
+  const F2=.022,BASE2=148;
+  for(let c=0;c<W;c++){const lx=s*F2+c-CX,sc=lx/F2,m=mtn(sc),f=x=>(.22+.78*fbm(x*.04,2))*m*62,h=f(lx),hn=f(lx+1),y0=Math.round(BASE2-h);
+    R(lc,hn<h?'#6c86a4':'#536c8c',c,y0,1,BASE2+2-y0);if(h>54)R(lc,'#eef2fa',c,y0,1,Math.round((h-54)*.6));
+    const fl=Math.round(y0+h*.38+vnoise(lx*.08,6)*8);R(lc,hn<h?'#3f6f5c':'#33604f',c,fl,1,BASE2+2-fl);
+    for(let y=fl;y<BASE2;y+=3)if(hash(c*7+y*13+Math.floor(lx))>.62)R(lc,'#28503f',c,y,1,2);
+    if(hash(Math.floor(lx)*5)>.55)R(lc,'#28503f',c,fl-1,1,1)}
+  }
+  if(rk>0){lc.globalAlpha=rk;drawStrip(lc,REAL.img.mid,realX('mid',s));lc.globalAlpha=1}
+  if(w.f>0){lc.fillStyle=`rgba(200,206,214,${w.f*.45})`;lc.fillRect(0,0,W,156)}
+  // green hills with patchwork fields and far hamlets
+  if(rk<1){
+  const F3=.07,BASE3=152;
+  for(let c=0;c<W;c++){const lx=s*F3+c-CX,sc=lx/F3,lake=seg(sc)[2]==='lake';const h=(7+fbm(lx*.05,3)*26*(.5+.5*mtn(sc)))*(lake?.6:1),y0=Math.round(BASE3-h);
+    R(lc,'#4f8a3e',c,y0,1,BASE3+4-y0);const fld=vnoise(lx*.03,9);if(fld>.55)R(lc,'#80b84c',c,y0+Math.round(h*.35),1,Math.ceil(h*.65)+2);else if(fld<.3)R(lc,'#2f6236',c,y0,1,Math.ceil(h*.7));
+    for(let y=y0+1;y<BASE3;y+=3)if(hash(c*31+y*7+Math.floor(lx))>.78)R(lc,'#2c5a32',c,y,1,1)}
+  for(let t=Math.floor((s*F3-CX)/16)-1;t<=Math.floor((s*F3+W-CX)/16)+1;t++){if(hash(t*17+3)>.32)continue;const x=Math.round(t*16+hash(t)*8-(s*F3-CX)),lx=t*16,sc=lx/F3;if(seg(sc)[2]==='forest')continue;
+    const y=BASE3-Math.round((7+fbm(lx*.05,3)*26*(.5+.5*mtn(sc)))*(seg(sc)[2]==='lake'?.6:1)*.45);R(lc,'#f2ead6',x,y,4,3);R(lc,'#a65a2e',x-1,y-1,6,1);if(dark>.35&&hash(t*5)>.3)lit.push([x+1,y+1,1,1])}
+  }
+  if(w.f>0){lc.fillStyle=`rgba(200,206,214,${w.f*.3})`;lc.fillRect(0,0,W,160)}
+
+  // water or valley floor
+  const F4=.2,BASE4=150,water=new Uint8Array(W);let wg=null,wgc=null;
+  if(rk<1){
+  for(let c=0;c<W;c++){const lx=s*F4+c-CX,sc=lx/F4,q=seg(sc);
+    if(q[2]==='lake'){water[c]=1;if(wgc!==q[5]){wgc=q[5];wg=lc.createLinearGradient(0,BASE4,0,H);wg.addColorStop(0,mixc(q[5],'#d8ecf8',.35));wg.addColorStop(1,mixc(q[5],'#0e2a5a',.35))}lc.fillStyle=wg;lc.fillRect(c,BASE4,1,H-BASE4)}
+    else{const col=q[2]==='city'?'#9a9488':q[2]==='forest'?'#2f5e36':q[2]==='pasture'?'#86b850':'#6aa640';R(lc,col,c,BASE4,1,H-BASE4);
+      for(let y=BASE4+1;y<H;y+=3){const pv=vnoise(lx*.06+y*.13,11);if(pv>.62)R(lc,mixc(col,'#d8e070',.25),c,y,1,2);else if(pv<.25)R(lc,mixc(col,'#000000',.15),c,y,1,2)}}}
+  rc.clearRect(0,0,W,H);rc.drawImage(outC,0,0);rc.drawImage(landC,0,0);
+  let c0=-1;for(let c=0;c<=W;c++){if(c<W&&water[c]){if(c0<0)c0=c}else if(c0>=0){lc.save();lc.globalAlpha=.42;lc.translate(0,BASE4*2);lc.scale(1,-1);lc.drawImage(reflC,c0,BASE4-70,c-c0,70,c0,BASE4-70,c-c0,70);lc.restore();c0=-1}}
+  for(let i=0;i<70;i++){const x=hash(i*7+Math.floor(ms/450))*W|0,y=BASE4+2+hash(i*7+1)*80|0;if(water[x])R(lc,'rgba(255,255,255,.35)',x,y,2+(i%4),1)}
+  if(el>-2&&!env.tun)for(let i=0;i<60;i++){const x=Math.round(sx+(hash(i*3+Math.floor(ms/220))-.5)*(18+i*.5)),y=BASE4+3+Math.floor(hash(i*5)*70);if(x>=0&&x<W&&water[x])R(lc,el<8?'rgba(255,214,150,.85)':'rgba(255,255,240,.85)',x,y,1+(i%3),1)}
+  for(let c=1;c<W;c++)if(water[c]!==water[c-1])R(lc,'#d8d0b0',c-1,BASE4-1,2,3);
+  for(let c=0;c<W;c++)if(water[c])R(lc,'rgba(230,240,250,.35)',c,BASE4,1,1);
+  for(let t=Math.floor((s*F4-CX)/30)-1;t<=Math.floor((s*F4+W-CX)/30)+1;t++){if(hash(t*5+11)>.16)continue;const x=Math.round(t*30-(s*F4-CX)),y=BASE4+6+Math.round(hash(t)*14);if(!water[clamp(x,0,W-1)])continue;
+    R(lc,'#ffffff',x+2,y-8,1,8);R(lc,'#ffffff',x+3,y-7,2,6);R(lc,'#ffffff',x+5,y-5,1,4);R(lc,'#f0f0f0',x,y-5,2,4);R(lc,'#7a5a42',x-1,y,9,2);R(lc,'rgba(255,255,255,.3)',x,y+3,7,1)}
+  }
+  if(rk>0)drawRealNear(s,ms,env,rk,sx);
+  if(rk>.5&&w.c<.75&&!env.tun)realLabels(s);
+
+  // near shore: villages, church, trees
+  const F5=.5;
+  for(let t=Math.floor((s*F5-CX)/34)-1;t<=Math.floor((s*F5+W-CX)/34)+1;t++){const r=hash(t*5+11),x=Math.round(t*34-(s*F5-CX)),sc=(t*34+17)/F5,ty=seg(sc)[2],gy=168+Math.round(hash(t*3)*6);
+    if(ty==='lake'&&(rk>.5||r>.22||x>W*.55))continue;
+    if(ty==='lake'){R(lc,'#6aa640',x-6,gy-2,46,8);R(lc,'#d8d0b0',x-6,gy+5,46,1)}
+    if(ty==='city'){for(let b=0;b<2;b++){const bw=14+Math.round(hash(t*3+b)*10),bh=18+Math.round(hash(t*9+b)*22),bx=x+b*17,by=gy-bh,col=['#ead9b4','#d9b998','#f0e6d0','#c8b0a0','#e0c8b8'][Math.floor(hash(t*7+b)*5)];
+        R(lc,col,bx,by,bw,bh);R(lc,'#8a4a2a',bx-1,by-3,bw+2,3);for(let yy=by+4;yy<gy-2;yy+=5)for(let xx=bx+2;xx<bx+bw-2;xx+=4){if(dark>.3&&hash(xx*7+yy*3+t)>.45)lit.push([xx,yy,2,2]);else R(lc,'#4a4a58',xx,yy,2,2)}}continue}
+    if(ty==='forest'){for(let k=0;k<3;k++){const tx=x+k*11,th=22+Math.round(hash(t*4+k)*14);for(let j=0;j<th;j++){const hw=Math.round(j*.3)+1;R(lc,j%5===0?'#1e4128':'#28543a',tx-hw,gy-th+j,hw*2,1)}}continue}
+    if(r<.42){const hx=x+2,hw=18,hh=11;R(lc,'#f2ead6',hx,gy-hh,hw,hh);R(lc,'#d8ccb4',hx+hw-3,gy-hh,3,hh);for(let j=0;j<7;j++)R(lc,j===6?'#6a3a1e':'#a65a2e',hx-3+j,gy-hh-1-j,hw+6-j*2,1);
+      R(lc,'#7a4a2a',hx+8,gy-5,3,5);for(const wx of [hx+3,hx+13]){if(dark>.3)lit.push([wx,gy-9,2,3]);else{R(lc,'#4a3a2a',wx-1,gy-9,4,3);R(lc,'#9ac0e0',wx,gy-9,2,2)}}
+      if(ty==='village'&&r<.16){const cx2=x+26;R(lc,'#f0ece2',cx2,gy-34,7,34);R(lc,'#d8d2c4',cx2+5,gy-34,2,34);R(lc,'#3a3a46',cx2+2,gy-26,3,4);
+        for(let j=0;j<14;j++){const hw2=Math.floor(j/3);R(lc,'#4a3a3a',cx2+3-hw2,gy-48+j,1+hw2*2,1)}R(lc,'#e2c25a',cx2+3,gy-50,1,2);if(dark>.3)lit.push([cx2+2,gy-20,3,3])}}
+    else if(r<.7){const th=24+Math.round(hash(t*3)*18),tx=x+10;R(lc,'#4a3424',tx-1,gy-4,2,4);for(let j=0;j<th;j++){const hw=Math.max(1,Math.round(Math.sin(j/th*Math.PI)*4));R(lc,j%4===0?'#1f4a2a':'#2b5f36',tx-hw,gy-4-th+j,hw*2,1)}}
+    else if(r<.85){const tx=x+12;R(lc,'#5a4030',tx-1,gy-8,3,8);for(let y=-9;y<=9;y++){const hw=Math.round(Math.sqrt(81-y*y));R(lc,y<-3?'#5aa04a':'#3e8a3e',tx-hw,gy-18+y,hw*2,1)}}}
+
+  // our own train, seen ahead where the line curves along the slope
+  let curveK=0;for(const cr of CURVES)if(s>cr[0]&&s<cr[1])curveK=Math.min(sstep(cr[0],cr[0]+250,s),1-sstep(cr[1]-250,cr[1],s));
+  if(curveK>0&&!env.tun){const sway=Math.sin(ms/900)*1.5,n=5,off=Math.round((1-curveK)*220);
+    R(lc,'#9a9284',60-off,170,180,3);for(let a=0;a<6;a++){const ax=72+a*28-off;R(lc,'#a49c8c',ax,172,22,20);lc.clearRect(ax+5,180,12,12);R(lc,'#46803a',ax+5,180,12,12)}
+    for(let k=n-1;k>=0;k--){const t=k/(n-1),x=Math.round(lerp(228,70,t))-off,y=Math.round(lerp(170,138,t*t)+sway*t),cw=Math.round(lerp(40,16,t)),chh=Math.round(lerp(18,9,t));
+      if(x+cw<52)continue;R(lc,'#c8342c',x,y-chh,cw,chh);R(lc,'#e8e4dc',x,y-chh,cw,1);R(lc,'#9a2620',x,y-2,cw,2);for(let wx=x+2;wx<x+cw-3;wx+=Math.max(3,Math.round(cw/6)))R(lc,dark>.3?'#ffd88a':'#2a2c3a',wx,y-chh+3,Math.max(1,Math.round(cw/12)),Math.max(2,Math.round(chh/3)));
+      R(lc,'#3a3a3a',x,y,cw,1)}}
+
+  // foreground meadow with flowers and a fence
+  const F6=1.3;const nearSt=ST.find(p=>Math.abs(p.s-s)<220);
+  for(let c=0;c<W;c++){const lx=s*F6+c-CX,y0=Math.round(fy(c)+vnoise(lx*.02,5)*10-5);
+    R(lc,'#8fcf48',c,y0,1,2);R(lc,'#74b83a',c,y0+2,1,12);R(lc,'#5f9e2e',c,y0+14,1,H);
+    const li=Math.floor(lx);for(let k=0;k<3;k++){const hv=hash(li*7+k*1013);if(hv<.34){const yy=y0+3+Math.floor(hash(li*13+k)*(H-y0-3));const col=hv<.12?'#fbf8ee':hv<.24?'#f4d43a':hv<.29?'#c87ad8':'#ffffff';R(lc,col,c,yy,1,1);if(hv<.06)R(lc,'#fffef6',c,yy-1,1,1)}}
+    if(hash(li*3+5)<.18)R(lc,'#4f8a2a',c,y0-1-Math.floor(hash(li)*3),1,2)}
+  for(let k=Math.floor((s*F6-CX)/34)-1;k<=Math.floor((s*F6+W-CX)/34)+1;k++){const x=Math.round(k*34-(s*F6-CX));if(x<-40||x>W)continue;const y0=Math.round(fy(x)+vnoise((k*34)*.02,5)*10-5);
+    R(lc,'#7a5232',x,y0-14,3,16);R(lc,'#5a3a22',x+2,y0-14,1,16);
+    const x2=x+34,y2=Math.round(fy(x2)+vnoise((k*34+34)*.02,5)*10-5);for(let i=0;i<34;i++){const yy=Math.round(lerp(y0,y2,i/34));R(lc,'#8a6240',x+i,yy-11,1,2);R(lc,'#8a6240',x+i,yy-5,1,2)}}
+  if(nearSt){const x0=Math.round(CX+(nearSt.s-s)*F6);R(lc,'#a8a49a',x0-320,176,640,H);R(lc,'#e2d27a',x0-320,176,640,2);R(lc,'#7f7b72',x0-320,178,640,1);
+    for(const off of [-120,120]){const sx2=x0+off;R(lc,'#4a4a50',sx2-1,140,2,36);R(lc,'#f4f4f0',sx2-32,128,64,14);R(lc,'#2a2a30',sx2-32,128,64,1);
+      lc.font='8px Silkscreen, monospace';lc.fillStyle='#1e2430';lc.textAlign='center';lc.fillText(nearSt.n.length>14?nearSt.sh:nearSt.n,sx2,138)}}
+  const F7=3;for(let k=Math.floor((s*F7-CX)/200)-1;k<=Math.floor((s*F7+W-CX)/200)+1;k++){const sc=k*200/F7;if(hash(k*19)>.15||ST.some(p=>Math.abs(p.s-sc)<250))continue;
+    const x=Math.round(k*200-(s*F7-CX)),th=150+Math.round(hash(k)*40);R(lc,'#2a1e16',x-3,H-40,6,40);for(let j=0;j<th;j++){const hw=Math.round((j%22)*1.1+j*.22)+2;R(lc,j%22<2?'#0f2414':'#16321c',x-hw,H-30-th+j,hw*2,1)}}
+  for(let c=0;c<W;c++){const sc=(s*F6+c-CX)/F6;if(inTun(sc)){let edge=false;for(const t of TUN)if(Math.abs(sc-t[0])<5||Math.abs(sc-t[1])<5)edge=true;R(lc,edge?'#6a6458':'#050506',c,0,1,H);
+      if(!edge&&Math.floor(sc)%40===0)lit.push([c,90,2,2])}}
+
+  const tn=tintFor(el,w);if(tn.a>0){lc.globalCompositeOperation='source-atop';lc.fillStyle=tn.c;lc.globalAlpha=tn.a;lc.fillRect(0,0,W,H);lc.globalAlpha=1;lc.globalCompositeOperation='source-over'}
+  if(dark>.3)for(const L of lit){lc.fillStyle=`rgba(255,214,130,${clamp(dark,0,1)})`;lc.fillRect(L[0],L[1],L[2],L[3])}
+  oc.drawImage(landC,0,0);
+  if(w.r>.05&&!env.tun){const n=Math.round(w.r*220),snow=w.snow;for(let i=0;i<n;i++){const x=hash(i*5+Math.floor(ms/80))*W,y=hash(i*5+1+Math.floor(ms/80))*H;
+    if(snow){oc.fillStyle='rgba(255,255,255,.8)';oc.fillRect(x|0,y|0,1,1)}else{oc.strokeStyle='rgba(200,215,235,.45)';oc.beginPath();oc.moveTo(x,y);oc.lineTo(x-2-Math.min(env.v,30)*.25,y+6);oc.stroke()}}}
+}
+
+/* ---------- audio ---------- */
+let AC=null,snd=null,soundOn=false;
+function noiseBuf(){const b=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b}
+function initAudio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){return}
+  const nb=noiseBuf(),mkN=(type,f)=>{const s=AC.createBufferSource();s.buffer=nb;s.loop=true;const fl=AC.createBiquadFilter();fl.type=type;fl.frequency.value=f;const gn=AC.createGain();gn.gain.value=0;s.connect(fl);fl.connect(gn);gn.connect(AC.destination);s.start();return gn};
+  snd={rumble:mkN('lowpass',170),rain:mkN('highpass',1400),wind:mkN('bandpass',500),acc:0,last:0}}
+function thump(at,vol){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(95,at);o.frequency.exponentialRampToValueAtTime(45,at+.12);
+  g.gain.setValueAtTime(vol,at);g.gain.exponentialRampToValueAtTime(.001,at+.16);o.connect(g);g.connect(AC.destination);o.start(at);o.stop(at+.2)}
+function chime(){if(!AC||!soundOn)return;const t=AC.currentTime;[659,523,784].forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,t+i*.35);g.gain.linearRampToValueAtTime(.12,t+i*.35+.02);g.gain.exponentialRampToValueAtTime(.001,t+i*.35+.9);o.connect(g);g.connect(AC.destination);o.start(t+i*.35);o.stop(t+i*.35+1)})}
+function shutter(){if(!AC||!soundOn)return;const t=AC.currentTime;[0,.07].forEach(d=>thump(t+d,.25))}
+
+/* ---------- captions, prompts, toasts ---------- */
+let toastT=0;function toast(m,sec=4){const el=$('toast');el.textContent=m;el.hidden=false;toastT=performance.now()+sec*1000}
+let capQ=[],capCur=null;
+function say(who,text,sec){if(who)st.lastWho=who;capQ.push({who,text,sec});if(capQ.length>3)capQ.shift()}
+function capTick(){const now=performance.now();if(capCur&&now>capCur.until){capCur=null;$('cap').textContent=''}
+  if(!capCur&&capQ.length){capCur=capQ.shift();capCur.until=now+(capCur.sec||Math.max(5,capCur.text.length*.12))*1000;const box=$('cap');box.textContent='';const d=document.createElement('span');d.className='line';
+    if(capCur.who){const p=PASS.find(p=>p.id===capCur.who);const w=document.createElement('span');w.className='who';w.textContent=`${p.name} · ${p.role}`;d.appendChild(w);d.appendChild(document.createTextNode(capCur.text))}
+    else{const n=document.createElement('span');n.className='nar';n.textContent=capCur.text;d.appendChild(n)}box.appendChild(d)}}
+function addLog(who,text,heard,where){st.log.push({who,text,heard,where});save()}
+let actKey=null;
+function setAct(key,text,btn,fn){if(actKey===key)return;actKey=key;$('act').hidden=!key;if(!key)return;$('actText').textContent=text;const b=$('actBtn');b.textContent=btn;b.onclick=fn}
+
+/* ---------- postcards (shared through the page's db when available) ---------- */
+let db=null,me=null,dl=null,cards=[],likes={},myLikes=new Set();
+const localCards=()=>{try{return JSON.parse(localStorage.getItem('train-cards')||'[]')}catch(e){return []}};
+function setCards(arr){cards=arr.sort((a,b)=>b.at-a.at);drawRouteMarks()}
+(async()=>{try{
+  if(!window.claude||!window.claude.use){setCards(localCards());return}
+  const [d,u,dw]=await Promise.all([claude.use('db'),claude.use('user'),claude.use('downloads')]);db=d;dl=dw;
+  try{me=u?await u.id():null}catch(e){me=null}
+  if(!me){try{me=localStorage.getItem('train-me')||('l'+Math.random().toString(36).slice(2));localStorage.setItem('train-me',me)}catch(e){me='anon'}}
+  if(!db){setCards(localCards());return}
+  db.collection('postcards').orderBy('at','desc').limit(400).onSnapshot(sn=>{setCards(sn.docs.map(x=>Object.assign({id:x.id},x.data())))},()=>setCards(localCards()));
+  db.collection('likes').onSnapshot(sn=>{likes={};myLikes=new Set();for(const x of sn.docs){const v=x.data();likes[v.pid]=(likes[v.pid]||0)+1;if(v.by===me)myLikes.add(v.pid)}},()=>{});
+}catch(e){setCards(localCards())}})();
+setCards(localCards());
+
+/* ---------- route bar ---------- */
+function buildRoute(){const rb=$('routebar');ST.forEach((p,i)=>{const d=document.createElement('div');d.className='st';d.style.left=(p.s/END*100)+'%';d.id='st'+i;rb.appendChild(d);
+  const l=document.createElement('div');l.className='stl '+(i%2?'dn':'up');l.style.left=(p.s/END*100)+'%';l.textContent=p.sh;rb.appendChild(l)})}
+buildRoute();
+function drawRouteMarks(){document.querySelectorAll('.pcm').forEach(e=>e.remove());const rb=$('routebar');for(const c of cards){const m=document.createElement('div');m.className='pcm';m.style.left=clamp(c.s/END*100,0,100)+'%';rb.appendChild(m)}}
+
+/* ---------- ticket time warp (game seconds) ---------- */
+const B_=20,D_=300;
+function gOf(r){const tk=st.ticketR;if(tk==null||r<tk)return r;const u=r-tk;if(u<B_)return tk+u-u*u/(2*B_);if(u<B_+D_)return tk+B_/2;if(u<2*B_+D_){const v=u-B_-D_;return tk+B_/2+v*v/(2*B_)}return r-(B_+D_)}
+
+/* ---------- frame ---------- */
+let env=null,cur={s:0,g:0,v:0,r:0},announced={},lastS=null,flash=0,drops=[];
+function frame(){
+  const ms=clockMs(),r=rNow(),g=gOf(r),s=sAt(g),v=(sAt(gOf(r+.5))-s)/.5;
+  const geoN=geo(s),sn=sun(ms,geoN.lat,geoN.lon),w=weather(ms),tun=inTun(s);
+  const dark=clamp((2-sn.el)/12,0,1);
+  env={el:sn.el,az:sn.az,w,dark,v,tun,alt:geoN.alt};cur={s,g,v,r};
+  drawOutside(s,ms,env);
+  ctx.drawImage(outC,0,0);
+  if(w.r>.05&&!w.snow&&!tun&&Math.random()<w.r*.8&&drops.length<90)drops.push({x:52+Math.random()*(W-52),y:14+Math.random()*170,l:1+Math.random()*2});
+  const vs=Math.min(v*st.speed,60);for(let i=drops.length-1;i>=0;i--){const d=drops[i];d.y+=.06+Math.random()*.15;d.x-=vs*.01;if(d.y>200||d.x<52||(w.r<.05&&Math.random()<.004)){drops.splice(i,1);continue}
+    ctx.fillStyle='rgba(225,235,250,.55)';ctx.fillRect(d.x|0,d.y|0,1,d.l|0);ctx.fillStyle='rgba(255,255,255,.8)';ctx.fillRect(d.x|0,d.y|0,1,1)}
+  ctx.fillStyle='rgba(255,255,255,.03)';for(let j=0;j<70;j++)ctx.fillRect(150+j,14+j*2.4,3,3);
+  if(tun||dark>.6){ctx.fillStyle=`rgba(255,220,170,${tun?.07:.04})`;ctx.fillRect(60,120,140,80)}
+  const lamps=sn.el<3||tun||w.c>.85;ftc.clearRect(0,0,W,H);ftc.drawImage(frC,0,0);ftc.globalCompositeOperation='source-atop';
+  if(lamps)ftc.fillStyle=dark>.6||tun?'rgba(70,40,30,.28)':'rgba(255,190,120,.12)';else ftc.fillStyle=w.c>.6?`rgba(70,80,100,${(w.c-.6)*.5})`:'rgba(255,255,255,0)';
+  ftc.fillRect(0,0,W,H);ftc.globalCompositeOperation='source-over';ctx.drawImage(frT,0,0);
+  if(lamps){ctx.fillStyle='rgba(255,220,150,.16)';ctx.beginPath();ctx.arc(21,36,30,0,7);ctx.fill();ctx.fillStyle='#fff6dc';ctx.fillRect(18,30,6,12)}
+  if(flash>0){ctx.fillStyle=`rgba(255,255,255,${flash})`;ctx.fillRect(0,0,W,H);flash=Math.max(0,flash-.05)}
+
+  if(st.start)logic(ms,s,w,sn);
+  if(soundOn&&AC&&snd){const sp=clamp(v/18,0,1);snd.rumble.gain.setTargetAtTime(.02+sp*.09+(tun?.07:0),AC.currentTime,.3);snd.rain.gain.setTargetAtTime(w.snow?0:w.r*.05,AC.currentTime,.5);snd.wind.gain.setTargetAtTime(sp*.012,AC.currentTime,.5);
+    if(lastS!=null){snd.acc+=s-lastS;const now=performance.now();if(snd.acc>18&&now-snd.last>260){snd.acc=0;snd.last=now;const at=AC.currentTime;thump(at,.08+sp*.12);thump(at+.13,.06+sp*.1)}}}
+  lastS=s;
+  if(!$('toast').hidden&&performance.now()>toastT)$('toast').hidden=true;
+  capTick();ui(ms,s,w,sn);
+  requestAnimationFrame(frame);
+}
+
+function logic(ms,s,w,sn){
+  const c={w,f:st.flags,night:sn.el<-4},where=placeName(s).ko;
+  for(const p of PASS)if(!st.fired['hi_'+p.id]&&onboard(p,s)){st.fired['hi_'+p.id]=1;say(null,p.hello,6)}
+  for(const b of BEATS){if(st.fired[b.id]||s<b.s)continue;st.fired[b.id]=1;const p=PASS.find(p=>p.id===b.who);if(!onboard(p,s))continue;const text=b.t(c);say(b.who,text);addLog(b.who,text,true,where)}
+  if(s>15000&&s<21500&&!st.flags.yarn&&onboard(PASS[0],s))setAct('yarn','발밑으로 빨간 실 뭉치가 굴러왔어요.','주워 드리기',()=>{st.flags.yarn=1;const t='어머, 실 뭉치가 거기까지 굴러갔네요. 고마워요, 그게 마지막 실이었거든요.';say('margrit',t);addLog('margrit',t,true,placeName(cur.s).ko);setAct(null);save()});
+  else if(asleep(s)&&seg(s)[3]==='Brienzersee')setAct('wake','엘리프가 아직 자고 있어요. 창밖에 브리엔츠 호수가 보여요.','깨워 주기',()=>{st.flags.wake=1;const t='아! 여기예요, 이 물빛. …찰칵.';say('elif',t);addLog('elif',t,true,placeName(cur.s).ko);flash=.9;shutter();setAct(null);save()});
+  else setAct(null);
+  const p=phaseAt(cur.g);
+  if(p&&p.move){const nx=ST[p.leg+1];if(nx.s-s<900&&!announced[p.leg]){announced[p.leg]=1;const last=p.leg+1===ST.length-1;
+    $('ann').innerHTML='';const de=document.createElement('span');de.className='de';de.textContent=(last?'Endstation: ':'Nächster Halt: ')+nx.n;const ko=document.createElement('span');ko.textContent=last?`이 열차의 종착역 ${nx.ko}입니다`:`다음 정차역은 ${nx.ko}입니다`;$('ann').append(de,ko);$('ann').hidden=false;chime();setTimeout(()=>$('ann').hidden=true,8000)}}
+  if(cur.g>=TOTAL&&$('arrive').hidden)arrive();
+  if(Math.floor(Date.now()/2000)!==logic.k){logic.k=Math.floor(Date.now()/2000);save()}
+}
+
+let lastInfo='';
+const awake=s=>PASS.filter(p=>onboard(p,s)&&!(p.id==='elif'&&asleep(s)));
+function ui(ms,s,w,sn){
+  const ph=phaseAt(cur.g);let next='';
+  if(!st.start)next='';else if(!ph)next='종착역에 도착했어요';else if(!ph.move)next=`${ST[ph.st].n} 정차 중`;else{const nx=ST[ph.leg+1];next=`다음 역 ${nx.n} · ${((nx.s-s)/1000).toFixed(1)} km`}
+  const info=`<span>스위스 현지 <b>${fmtT.format(ms)}</b></span><span>날씨 <b>${w.name}</b>${w.rainbow>.1&&sn.el>3?' · 무지개':''}</span><span>해발 <b>${env.alt} m</b></span><span>시속 <b>${Math.round(cur.v*3.6)} km</b></span><span>${next}</span>${st.speed>1?`<span><b>x${st.speed} 빨리 감기 중</b></span>`:''}`;
+  if(info!==lastInfo){$('info').innerHTML=info;lastInfo=info}
+  $('rbDone').style.width=(s/END*100)+'%';$('train').style.left=(s/END*100)+'%';ST.forEach((p,i)=>$('st'+i).classList.toggle('past',s>=p.s));
+  const tk=st.ticketR;let stopTxt='';if(tk!=null){const u=cur.r-tk;if(u>=0&&u<B_)stopTxt='임시 정차를 위해 천천히 멈추는 중';else if(u>=B_&&u<B_+D_){const left=Math.ceil((B_+D_-u)/st.speed);stopTxt=`임시 정차 중 · ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} 남음`}}
+  $('stopInfo').hidden=!stopTxt;if(stopTxt)$('stopInfo').textContent=stopTxt;
+  const okT=st.start&&tk==null&&ph&&ph.move&&s-ST[ph.leg].s>700&&ST[ph.leg+1].s-s>700&&!env.tun;$('bTicket').disabled=!okT;$('tkN').textContent=tk==null?'1':'0';
+  const aw=awake(s);$('bTalk').disabled=!(st.start&&aw.length);$('bTea').disabled=!(st.start&&st.tea>0&&aw.some(p=>!st.flags['tea_'+p.id]));$('teaN').textContent=st.tea;
+  $('bCard').disabled=!st.start;
+  const here=cards.filter(c=>Math.abs(c.s-s)<350);const ch=$('cardsHere');ch.hidden=!here.length||!st.start;
+  if(here.length){const n=here.reduce((a,c)=>a+(likes[c.id]||0),0);ch.textContent=`이 근처에서 쓴 엽서 ${here.length}장`;ch.classList.toggle('warm',n>=3)}
+}
+
+/* ---------- actions ---------- */
+function pickMate(filter){const aw=awake(cur.s).filter(filter);if(!aw.length)return null;return aw.find(p=>p.id===st.lastWho)||aw[Math.floor(Math.random()*aw.length)]}
+$('bTalk').onclick=()=>{const q=pickMate(()=>true);if(!q)return;say(q.id,q.idle[Math.floor(Math.random()*q.idle.length)])};
+$('bTea').onclick=()=>{const q=pickMate(p=>!st.flags['tea_'+p.id]);if(!q||st.tea<=0)return;st.tea--;st.flags['tea_'+q.id]=1;say(null,`${q.name}에게 보온병의 차를 따라 주었어요.`,3);say(q.id,q.tea);addLog(q.id,q.tea,true,placeName(cur.s).ko);save()};
+$('bTicket').onclick=()=>{if(st.ticketR!=null)return;st.ticketR=rNow();save();toast('정차 티켓을 냈어요. 기차가 이 자리에서 5분 동안 머물러요.',5)};
+$('bSnd').onclick=()=>{initAudio();if(!AC)return;soundOn=!soundOn;if(soundOn)AC.resume();else{for(const k of ['rumble','rain','wind'])snd[k].gain.setTargetAtTime(0,AC.currentTime,.1)}$('bSnd').textContent=soundOn?'소리 끄기':'소리 켜기'};
+document.querySelectorAll('.ff button').forEach(b=>b.onclick=()=>setSpeed(+b.dataset.sp));
+
+/* ---------- boarding & arrival ---------- */
+function intro(){const g=gOf(rNow());
+  if(st.start&&g<TOTAL){$('introTitle').textContent='기차는 당신 없이도 달리고 있었어요';$('introText').textContent=`지금 기차는 ${placeName(sAt(g)).ko} 쪽을 달리고 있어요. 자리를 비운 사이 지나간 이야기는 수첩에 흐릿하게 남아 있어요.`;
+    $('bBoard').textContent='다시 타기';$('bRestart').hidden=false}
+  else if(st.start&&g>=TOTAL){st=fresh();save()}
+  setSpeed(st.speed||1)}
+intro();
+function board(restart){if(restart||!st.start){const sp=st.speed||1;st=fresh();st.start=Date.now();st.tBase=Date.now();st.speed=sp}
+  const s=sAt(gOf(rNow()));for(const b of BEATS)if(!st.fired[b.id]&&b.s<s-300){st.fired[b.id]=1;const p=PASS.find(p=>p.id===b.who);if(onboard(p,b.s))addLog(b.who,b.t({w:weather(clockMs()),f:st.flags,night:false}),false,'자리를 비운 사이')}
+  for(const p of PASS)if(s>p.board+300)st.fired['hi_'+p.id]=1;
+  save();$('intro').hidden=true;announced={};for(let i=0;i<ST.length-1;i++)if(ST[i+1].s<=s+900)announced[i]=1;
+  initAudio();if(AC){soundOn=true;AC.resume();$('bSnd').textContent='소리 끄기'}}
+$('bBoard').onclick=()=>board(false);$('bRestart').onclick=()=>board(true);
+function arrive(){const heard=st.log.filter(l=>l.heard).length,miss=st.log.filter(l=>!l.heard).length;const mine=cards.filter(c=>c.by===me).length;
+  $('arriveText').textContent=`들은 이야기 ${heard}개${miss?`, 놓친 이야기 ${miss}개`:''}${mine?`, 남긴 엽서 ${mine}장`:''}. 같은 노선이라도 시간과 날씨, 작은 선택에 따라 다른 이야기를 듣게 돼요.`;$('arrive').hidden=false}
+$('bAgain').onclick=()=>{$('arrive').hidden=true;board(true)};
+
+/* ---------- modal: journal ---------- */
+function openModal(build){const sh=$('sheet');sh.textContent='';build(sh);$('modal').hidden=false}
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')$('modal').hidden=true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('modal').hidden=true});
+function sheetTop(sh,title){const t=document.createElement('div');t.className='top';const h=document.createElement('h3');h.textContent=title;const x=document.createElement('button');x.className='b';x.textContent='닫기';x.onclick=()=>$('modal').hidden=true;t.append(h,x);sh.appendChild(t)}
+function openBook(){openModal(sh=>{sheetTop(sh,'여행 수첩');if(!st.log.length){const p=document.createElement('p');p.className='note';p.textContent='아직 적힌 이야기가 없어요. 승객의 이야기를 들으면 여기에 남아요.';sh.appendChild(p);return}
+  const ul=document.createElement('ul');ul.className='log';for(const l of st.log){const li=document.createElement('li');const p=PASS.find(p=>p.id===l.who);if(!l.heard)li.className='miss';
+    li.textContent=l.heard?l.text:`(${p.name}의 이야기를 놓쳤어요.)`;const sm=document.createElement('small');sm.textContent=`${p.name} · ${l.where}`;li.appendChild(sm);ul.appendChild(li)}sh.appendChild(ul)})}
+$('bBook').onclick=openBook;$('bBook2').onclick=openBook;
+
+/* ---------- postcards ---------- */
+let fontsReady=document.fonts?document.fonts.load('22px "Gowun Dodum"').then(()=>document.fonts.load('10px Silkscreen')).catch(()=>{}):Promise.resolve();
+function wrapText(g,text,maxW){const out=[];let line='';for(const ch of text){if(ch==='\n'){out.push(line);line='';continue}const t=line+ch;if(g.measureText(t).width>maxW&&line){out.push(line);line=ch}else line=t}if(line)out.push(line);return out}
+function loadImg(src){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src})}
+async function renderCard(pc){await fontsReady;const c=document.createElement('canvas');c.width=800;c.height=500;const g=c.getContext('2d');g.imageSmoothingEnabled=false;
+  g.fillStyle='#f1e8d2';g.fillRect(0,0,800,500);g.fillStyle='#e6dbc0';for(let i=0;i<800;i+=4)g.fillRect(i,0,1,500);
+  const img=await loadImg(pc.img);if(img){g.drawImage(img,16,16,768,256)}g.strokeStyle='#3b3328';g.lineWidth=2;g.strokeRect(16,16,768,256);
+  g.fillStyle='#c9bd9f';g.fillRect(520,290,2,190);
+  g.fillStyle='#3b3328';g.font='22px "Gowun Dodum", sans-serif';g.textBaseline='top';const lines=wrapText(g,pc.text||'',480).slice(0,5);lines.forEach((l,i)=>g.fillText(l,24,296+i*32));
+  g.fillStyle='#8a7a5a';g.font='14px "Gowun Dodum", sans-serif';g.fillText(pc.from?`— ${pc.from}`:'— 창가석에서',24,468);
+  g.fillStyle='#fffaf0';g.fillRect(660,290,116,96);g.strokeStyle='#cf4a3c';g.setLineDash([4,3]);g.strokeRect(660,290,116,96);g.setLineDash([]);
+  g.fillStyle='#4a7cc4';g.fillRect(668,298,100,60);g.fillStyle='#eef3fb';g.beginPath();g.moveTo(668,358);g.lineTo(700,312);g.lineTo(716,330);g.lineTo(738,304);g.lineTo(768,358);g.fill();
+  g.fillStyle='#3d7f5a';g.fillRect(668,346,100,12);g.fillStyle='#cf4a3c';g.font='10px Silkscreen, monospace';g.fillText('HELVETIA',672,364);
+  g.strokeStyle='rgba(60,60,80,.55)';g.lineWidth=2;g.beginPath();g.arc(606,370,40,0,7);g.stroke();g.fillStyle='rgba(60,60,80,.7)';g.font='9px Silkscreen, monospace';g.textAlign='center';g.fillText('LUZERN',606,352);g.fillText('INTERLAKEN',606,380);g.font='8px Silkscreen, monospace';g.fillText(pc.date8||'',606,366);g.textAlign='left';
+  g.fillStyle='#3b3328';g.font='15px "Gowun Dodum", sans-serif';g.fillText(pc.placeKo||'',540,412);g.fillStyle='#6a5d48';g.font='13px "Gowun Dodum", sans-serif';
+  g.fillText(`km ${(pc.s/1000).toFixed(1)} · 해발 ${pc.alt} m`,540,436);g.fillText(`${pc.local||''} · ${pc.weather||''}`,540,458);
+  return c}
+function snapScene(){const c=document.createElement('canvas');c.width=508;c.height=170;const g=c.getContext('2d');g.drawImage(outC,52,16,508,170,0,0,508,170);return c.toDataURL('image/jpeg',.85)}
+function cardMeta(){const s=cur.s,pn=placeName(s),ms=clockMs();
+  return {s:Math.round(s),place:pn.de,placeKo:pn.ko,alt:env.alt,local:`${fmtD.format(ms)} ${fmtT.format(ms)}`,date8:new Date(ms).toISOString().slice(0,10),weather:env.w.name,at:Date.now()}}
+function shareRow(sh,canvas,pc){const row=document.createElement('div');row.className='row';const body=`${pc.text}\n\n— ${pc.placeKo}, km ${(pc.s/1000).toFixed(1)}, ${pc.local}\n창가석 기차 여행에서 보낸 엽서`;
+  const bSave=document.createElement('button');bSave.className='b';bSave.textContent='이미지 저장';
+  bSave.onclick=()=>canvas.toBlob(async blob=>{if(!dl){toast('이 화면에서는 저장 버튼을 쓸 수 없어요. 엽서 이미지를 길게 누르거나 우클릭해서 저장하세요.',6);return}
+    try{await dl.save({filename:`엽서-${pc.place.replace(/[^\wäöüÄÖÜ-]+/g,'_')}.png`,data:blob});bSave.textContent='저장했어요'}catch(e){if(e&&e.code!=='declined')toast('이미지를 저장하지 못했어요. 엽서 이미지를 길게 눌러 저장해 보세요.',6)}},'image/png');
+  const bCopy=document.createElement('button');bCopy.className='b';bCopy.textContent='글 복사';bCopy.onclick=async()=>{try{await navigator.clipboard.writeText(body);bCopy.textContent='복사했어요'}catch(e){ta.hidden=false;ta.select()}};
+  const mail=document.createElement('a');mail.className='b';mail.textContent='메일로 보내기';mail.href=`mailto:?subject=${encodeURIComponent('창가석에서 보낸 엽서: '+pc.placeKo)}&body=${encodeURIComponent(body)}`;
+  const sms=document.createElement('a');sms.className='b';sms.textContent='문자로 보내기';sms.href=`sms:?&body=${encodeURIComponent(body)}`;
+  row.append(bSave,bCopy,mail,sms);sh.appendChild(row);const ta=document.createElement('textarea');ta.readOnly=true;ta.value=body;ta.hidden=true;sh.appendChild(ta);
+  const n=document.createElement('p');n.className='note';n.textContent='메일과 문자에는 글만 담겨요. 사진은 먼저 저장한 뒤 첨부해 주세요. 기기에 따라 메일·문자 버튼이 열리지 않을 수 있어요. 그럴 땐 글 복사를 써 주세요.';sh.appendChild(n)}
+$('bCard').onclick=async()=>{const pc=Object.assign({img:snapScene(),text:'',from:''},cardMeta());let canvas=await renderCard(pc);
+  openModal(sh=>{sheetTop(sh,'엽서 쓰기');const im=document.createElement('img');im.className='pc';im.alt='엽서 미리보기';im.src=canvas.toDataURL();sh.appendChild(im);
+    const ta=document.createElement('textarea');ta.id='pcText';ta.maxLength=140;ta.placeholder='이 풍경을 누구에게 보여주고 싶나요?';sh.appendChild(ta);
+    const nm=document.createElement('textarea');nm.id='pcFrom';nm.maxLength=20;nm.placeholder='보내는 사람 (비워 두면 "창가석에서")';nm.style.minHeight='38px';sh.appendChild(nm);
+    let tmr=0;const upd=()=>{clearTimeout(tmr);tmr=setTimeout(async()=>{pc.text=ta.value;pc.from=nm.value.trim();canvas=await renderCard(pc);im.src=canvas.toDataURL()},250)};ta.oninput=upd;nm.oninput=upd;
+    const row=document.createElement('div');row.className='row';const bPost=document.createElement('button');bPost.className='b main';bPost.textContent='이 자리에 엽서 남기기';
+    const n=document.createElement('p');n.className='note';n.textContent=`${pc.placeKo} · km ${(pc.s/1000).toFixed(1)}. 남긴 엽서는 이 노선을 지나는 다른 여행자의 창문에 나타나요.`;
+    bPost.onclick=async()=>{pc.text=ta.value.trim();pc.from=nm.value.trim();if(!pc.text){toast('엽서에 한 줄이라도 적어 주세요.');ta.focus();return}
+      bPost.disabled=true;canvas=await renderCard(pc);im.src=canvas.toDataURL();const doc={s:pc.s,place:pc.place,placeKo:pc.placeKo,alt:pc.alt,local:pc.local,date8:pc.date8,weather:pc.weather,text:pc.text,from:pc.from,img:pc.img,at:pc.at,by:me||'local'};
+      let shared=false;if(db){try{await db.collection('postcards').add(doc);shared=true}catch(e){}}
+      if(!shared){const arr=localCards();arr.push(Object.assign({id:'l'+pc.at},doc));try{localStorage.setItem('train-cards',JSON.stringify(arr.slice(-40)))}catch(e){}setCards(arr)}
+      ta.readOnly=true;nm.readOnly=true;bPost.textContent=shared?'엽서를 남겼어요':'이 기기에만 남겼어요';n.textContent=shared?'이제 이 자리를 지나는 여행자들이 엽서를 보게 돼요. 바로 누군가에게 보낼 수도 있어요.':'공유 저장소에 연결되지 않아 이 기기에만 남겼어요. 아래에서 바로 보낼 수 있어요.';
+      shareRow(sh,canvas,pc)};
+    row.append(bPost);sh.append(row,n)});
+  setTimeout(()=>{const t=$('pcText');if(t)t.focus()},50)};
+$('cardsHere').onclick=async()=>{const s=cur.s;const here=cards.filter(c=>Math.abs(c.s-s)<350);
+  openModal(sh=>{sheetTop(sh,'이 근처에서 쓴 엽서');for(const pc of here){const it=document.createElement('div');it.className='cardItem';const im=document.createElement('img');im.className='pc';im.alt=pc.text;it.appendChild(im);
+      renderCard(pc).then(cv2=>{im.src=cv2.toDataURL();const row=document.createElement('div');row.className='row';const n=likes[pc.id]||0;const lb=document.createElement('button');lb.className='b';
+        const mine=myLikes.has(pc.id);lb.textContent=mine?`함께 본 사람 ${n}명`:`나도 이 풍경을 봤어요 · ${n}`;lb.disabled=mine||!db||String(pc.id).startsWith('l');
+        lb.onclick=async()=>{lb.disabled=true;try{await db.collection('likes').doc(`${pc.id}_${me}`.replace(/[^\w-]/g,'_')).set({pid:pc.id,by:me,at:Date.now()});lb.textContent=`함께 본 사람 ${n+1}명`}catch(e){lb.disabled=false;toast('지금은 표시할 수 없어요. 잠시 뒤 다시 눌러 주세요.')}};
+        row.appendChild(lb);it.appendChild(row);shareRow(it,cv2,pc)});
+      const meta=document.createElement('div');meta.className='meta';meta.textContent=`${pc.from||'창가석의 여행자'} · ${pc.local} · ${pc.weather}`;it.appendChild(meta);sh.appendChild(it)}})};
+
+requestAnimationFrame(frame);
+window.__train={sAt,jump:g=>{st.rBase=g;st.tBase=Date.now();save()},st:()=>st,cur:()=>cur,TOTAL};
+})();
+</script>
