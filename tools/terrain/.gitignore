@@ -1,0 +1,4 @@
+tiles/
+*.png
+manifest.json
+__pycache__/
